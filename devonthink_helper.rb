@@ -21,6 +21,8 @@ class Devonthink_helper
       @walker_log = Log.new('Walker') # Follows the walk of the iterators
       sleep(1)
       @unify_url_log = Log.new('Unify URL')  # TEST
+      sleep(1)
+      @pdf_to_rtf_log = Log.new('PDF to RTF')  # TEST
 
     end
     begin # DevonThink items
@@ -29,13 +31,197 @@ class Devonthink_helper
     end
 
     @textedit = SBApplication.applicationWithBundleIdentifier_('com.apple.TextEdit')
+  end
 
-    begin # Tommys stuff. TODO Remove
-      @ab = @db.root.children.select{|c| c.name == 'Användbarhetsboken'}[0].get
-      @ab2 = @db.root.children.select{|c| c.name == 'Användbarhetsboken 2'}[0].get
-      @tillf = @db.root.children.select{|c| c.name == 'tillf'}[0].get
+
+  # Senare:
+  # Kolla om det finns en rubrik, och sätt annars dit title
+  # Sätt dit skärmdump av webbsidan
+  # Sätt dit rätt ikon
+  # AppleScript för att växla mellan pdf och readabilitiserad version
+  def transform_pdfs_to_readabilitycleaned_rtf(group)
+    pdf_documents = []
+
+    # To safely be able to add/remove records, we need real references to the documents
+    count = 0
+    each_pdf_document(group) do |record|
+      pdf_documents << record.get
+      @pdf_to_rtf_log.debug "Get: '#{record.name}' (#{record.kind})"
+      count += 1
+    end
+    @pdf_to_rtf_log.debug "--- #{count} PDFs ---"
+
+    pdf_documents.each do |record|
+      transform_a_pdf_to_readabilitycleaned_rtf(record)
     end
   end
+
+  def transform_a_pdf_to_readabilitycleaned_rtf(record)
+    begin
+      @pdf_to_rtf_log.debug "pdf->rtf: '#{record.name}' (#{record.kind})"
+
+      readable_html = readability(record.URL) if record.URL
+      if not readable_html then next end
+
+      # Temporary files, used as temporary storage (I'm not using tempfile, since I need to the suffix)
+      html_path = '/private/tmp/devonthinkhelper_source.html'
+      rtf_path = '/private/tmp/devonthinkhelper_processed.rtfd' # rtfd = files capable of containing images
+      #   Remove old temp files
+      FileUtils.remove_file(html_path) if File.exist?(html_path)
+      FileUtils.remove_file(rtf_path, true) if File.exist?(rtf_path) # true = force remove. I was not able
+            # to remove rtfd-files any other way. (rtd files was no problem).
+      #   Create new tempfiles
+      File.open(html_path, 'w+') do |html_file|  # Creates a temporary file, neede to get the code into textedit
+        html_file.puts readable_html
+      end
+
+      html_to_rtf_file(html_path, rtf_path)  # The resulting file is now in the file at rtf_path
+
+      begin
+        rec = @devonthink.import_from_name_placeholders_to_type_(rtf_path, nil, record.name, nil, @db.incomingGroup, nil)
+      rescue Exception => e
+        @log.warn "Import failed with '#{record.name}', due to '#{e}'"
+      end
+
+      # Infuse some metainfo from the old record into the new
+      rec.URL = record.URL
+      rec.date = record.date
+      rec.comment = record.comment
+
+      begin # Place the new record at the same locations as the old
+        parents = record.parents
+        parents = remove_replicas(parents)
+
+        # Move it to the first - and trash the original
+        target_group = parents.pop
+        @devonthink.moveRecord_to_from_(rec, target_group, @db.incomingGroup)
+        @created_deleted_log.info "Created: '#{rec.name}' (#{rec.kind}) in '#{target_group.name}'"
+        trash(record, @db.incomingGroup)
+        # TODO Check that tags also are preserved
+
+        # Replicate to the rest (if any) - and trash originals
+        parents.each do |parent|
+          @devonthink.replicateRecord_to_(rec, parent)
+          @created_deleted_log.info "Created: '#{rec.name}' (#{rec.kind}) in '#{parent.name}'"
+          trash(record, parent)
+          # TODO Check that tags also are preserved
+        end
+      end
+
+
+      # TODO: Ensure that it works for tags also.
+
+=begin
+      begin
+        rec = @devonthink.import_from_name_placeholders_to_type_(rtf_path, nil, record.name, nil, @tillf, nil)
+        rec.URL = record.URL
+        #GÖR OMrec.tags = record.tags.join(',') + ', rtf-ad'
+        rec.date = record.date
+        rec.comment = record.comment
+
+
+        @log.debug "   Have created #{rec.name} (in #{rec.parents.each {|p| p.name}})"
+        @log.info "   Deleting #{item.name} (#{record.class})"
+        @devonthink.deleteRecord_in_(item, nil) # Removes the pdf-file  BUG?  Använd ett get någon smart ställe
+        @log.info "   Done, with tags: #{rec.tags.join(' | ')}"
+      rescue Exception => e
+        @log.warn "Failed with '#{record.name}' (most likely a failed import), due to '#{e}'"
+      end
+=end
+    rescue Exception => e
+      @log.error "Failed to handle '#{record.name}'. Error: '#{}'"
+    end
+
+
+
+
+
+  end
+
+# Takes a PDF+Text document and replaces the text with a readability-cleaned version.
+  # This will (hopefully) result in better recomendation and searches.
+  # For practical reason, the PDF is replaced with the current page on the url.
+  # TODO: Remove html codes.
+  # TODO: Special för mig: ta bort "Texten oven..."-texten.
+  # TODO: Figure how to call this when the pdf is first imported.
+  # TODO: Ev. även passa på att få in rätt ikoner, när man ändå bläddrar igenom allt.
+  def readability(url)
+    begin
+      source = open(url).read   # An alternative (to load protected pages) here could be
+            # @devonthink.downloadMarkupFrom_agent_encoding_password_post_referrer_user
+    rescue
+      @pdf_to_rtf_log.warn "WARNING - Unable to open url: #{url}"
+      return nil
+    end
+
+    source = source.gsub('<img', '***IMG***<img')  # Workaround to compensate that Readability removes
+                                                       # paragraphs consisting only of a img element (without text)
+    m = /<title>(.*?)<\/title>/.match(source)
+    title = m[1] if m
+    processed = Readability::Document.new(source, {
+        :tags => ['div', 'p', 'a', 'img', 'h1', 'h2', 'h3', 'h4', 'h5', 'ul', 'ol', 'li', 'dl', 'dd', 'dt',
+                    'strong', 'b', 'em', 'i', 'blockquote', 'pre', 'code'],
+        :attributes => ['href', 'src']
+    } ).content
+    processed = processed.gsub('***IMG***', '')
+    processed = "<html>
+      <head>
+      <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+      <base href='#{url}'>
+      <style type='text/css'>
+        body {
+          background-color: white;
+        }
+        a {
+          color: darkBlue;
+        }
+        body, p, li, blockquote {
+          font-family: Georgia;
+          font-size: 18px;
+          line-height: 1.6;
+        }
+        img {
+          border: 1px solid #333;
+        }
+      </style>
+      </head>
+
+      <body>" + "<h2>#{title}</h2>" + processed + "
+      </body>
+      </html>"
+    return processed
+  end
+
+  # Uses TextEdit to convert html pages into rtf (with the purpose of later importing them into Devon)
+  # Note: Result is written to rtf_file, not returned.
+  def html_to_rtf_file(html_path, rtf_path)
+    begin
+      textedit_doc = @textedit.open(html_path)
+    rescue Exception => e
+      @log.warn "Unable to open document from '#{html_path}', due to '#{e}'."
+    end
+    begin
+      textedit_doc.saveAs_in_(nil, OSX::NSURL::fileURLWithPath(rtf_path))
+    rescue Exception => e
+      @log.warn "Unable to save document from '#{html_path}' to '#{rtf_path}', due to '#{e}'."
+    end
+    begin
+      textedit_doc.delete     # Important to close, since the file is force-deleted
+    rescue Exception => e
+      @log.warn "Unable to close codument at '#{rtf_path}', due to '#{e}'."
+    end
+  end
+
+  # Uses TextEdit to convert html pages into rtf (with the purpose of later importing them into Devon)
+  # Note: Result is written to rtf_file, not returned.
+  def KANDENNASKIPPAS_html_to_rtf(html_path)
+    textedit_doc = @textedit.open(html_path)
+    return textedit_doc.tex
+  end
+
+
+
+
 
   # Takes a list of records, and makes them into replicas of each other.
   # TODO: Remove when there are several identical replicas under the same parent
@@ -80,8 +266,7 @@ class Devonthink_helper
       rparents.each do |rparent|    # Record must be replaced in all its locations
         @devonthink.replicateRecord_to_(master, rparent)
         @created_deleted_log.info "Created: '#{master.name}' (#{master.kind})"
-        @devonthink.deleteRecord_in_(r, rparent)
-        @created_deleted_log.info "Deleted: '#{r.name}' (#{r.kind})"
+        trash(r, rparent)
         # TODO Check that tags also are preserved
       end
     end
@@ -108,9 +293,7 @@ class Devonthink_helper
         r = children.pop
         if children.map{|c| c.uuid}.include?(r.uuid) then
           # There is a replica of r in children, so let's delete it
-          @devonthink.moveRecord_to_from_(r, @db.trashGroup, g)
-          #@devonthink.deleteRecord_in_(r, g)
-          @created_deleted_log.info "Deleted: '#{r.name}' (#{r.kind}) in '#{g.name}'"
+          trash(r,g)
         end
       end
     end
@@ -122,8 +305,9 @@ class Devonthink_helper
 
     # Moves record to trash.
     # If from is nil, all instances will be moved.
-    def trash(from = nil)
-
+    def trash(record, from = nil)
+      @devonthink.moveRecord_to_from_(record, @db.trashGroup, from)
+      @created_deleted_log.info "Deleted: '#{record.name}' (#{record.kind}) in '#{if from then from.name else '*everywhere*' end}'"
     end
 
     begin # Iterators
@@ -181,6 +365,32 @@ class Devonthink_helper
         end
       end
 
+      def each_pdf_document(top, safe_references = true, wide_deep = :deep, level=0, limit = :all)
+        # wide_deep = :wide is not implemented yet
+        # safe_references = false not implemented
+        # limit not implemented
+        level += 1
+        indent = "  "*(level-1)
+
+        case # For case syntax, see http://ilikestuffblog.com/2008/04/15/how-to-write-case-switch-statements-in-ruby/
+          when top.name == "Web Browser.html",    # Web Browser.html is a hack in DevonThink, not a regular file
+               top.kind == "Smart Group",         # Since content in smart groups are also in other places, I avoid them
+               top.uuid == @db.trashGroup.uuid,             # Don't look in the Trash
+               top.uuid == @db.syncGroup.uuid,              # Don't know what this group really does, so I avoid it for the time being
+               top.uuid == @db.tagsGroup.uuid               # TODO: I think this should eventually be included
+            @walker_log.debug indent + "SKIPPED: '#{top.name}'"
+          else
+            top = top.get # I'm using a lot of .get, to avoid mysterious bugs (at the cost of a slower application)
+            if top.kind == "PDF+Text" then
+              @walker_log.debug indent + "'#{top.name}' (#{top.kind})"
+              yield(top)
+            end
+            # TODO Daycare
+            top.children.each do |child|
+              each_pdf_document(child, safe_references, wide_deep, level){|newtop| yield(newtop)}
+            end
+        end
+      end
     end
 
     begin
@@ -253,11 +463,16 @@ if __FILE__ == $0 then
   #group = dtdb.group_from_string('/Användbarhetsboken')
   #group = dtdb.group_from_string('/Topics')
   #group = dtdb.group_from_string('/Topics/instruktion')
-  group = dtdb.group_from_string('/Topics/hus')
+  group = dtdb.group_from_string('/Topics/affärsidé')
 
   #dtdb.each_normal_group_record(group){|record| puts record.name}
   #dtdb.each_normal_group(group){|record| puts record.name}
   #dtdb.all_URLs_with_several_instances(group)
-  dtdb.unify_URLs(group)
-  dtdb.uniqify_replicas_of_group(group)
+
+  dtdb.transform_pdfs_to_readabilitycleaned_rtf(group)
+
+  #dtdb.unify_URLs(group)
+  #dtdb.uniqify_replicas_of_group(group)
+
+
 end
