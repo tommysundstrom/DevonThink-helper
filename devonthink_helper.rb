@@ -46,17 +46,18 @@ class Devonthink_helper
         top = top.get # I'm using a lot of .get, to avoid mysterious bugs (at the cost of a slower application)
         @walker_log.debug "  "*(level-1) + "'#{top.name}' (#{top.kind})"
         yield(top)
+        # TODO Daycare
+        top.children.each do |child|
+          each_normal_group_record(child, wide_deep, level){|newtop| yield(newtop)}
+        end
       end
 
-      def each_safe_record
-
-      end
     end
 
     begin
       # Takes a string/symbol that points at a group, and returns the group.
       #   An empty string will return root.
-      def group_from_string(group_path)
+      def group_from_string(group_path = :root)
         # Get the context group
         if group_path == '' or group_path == :root then
           group = @db.root
@@ -75,6 +76,6 @@ end # class Devonthink_helper
 
 if __FILE__ == $0 then
   dtdb = Devonthink_helper.new('BokmarktPA04_TEST')
-  group = dtdb.group_from_string(group_path)
-  dtdb.each_normal_group_record('')
+  group = dtdb.group_from_string(:root)  # :root for root
+  dtdb.each_normal_group_record(group){|record| puts record.name}
 end
