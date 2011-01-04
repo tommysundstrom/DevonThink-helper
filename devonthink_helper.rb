@@ -220,15 +220,6 @@ class Devonthink_helper
     end
   end
 
-  # Uses TextEdit to convert html pages into rtf (with the purpose of later importing them into Devon)
-  # Note: Result is written to rtf_file, not returned.
-  def KANDENNASKIPPAS_html_to_rtf(html_path)
-    textedit_doc = @textedit.open(html_path)
-    return textedit_doc.tex
-  end
-
-
-
 
 
   # Takes a list of records, and makes them into replicas of each other.

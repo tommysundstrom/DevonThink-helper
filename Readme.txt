@@ -20,6 +20,8 @@ For the moment, it can:
             If you intentionally have several version of the page saved - maybe to have a historical documentation -
             they will be lost.
 
+            Will change the database, so please make sure there is a backup before you run it.
+
  * Take PDF files of web-pages, replace them with Readability-versions of the page and transform it to rtf.
    At least on my databases, the Move To/See Also-functionality used to be worthless. After applying Readability to
    the pages, the results are much better (but strength of the recommendation is still seldom better than the red area).
@@ -32,12 +34,20 @@ For the moment, it can:
 
             While TextEdit is does a reasonable job formatting the page, the result is not always pretty.
 
+            TextEdit will flash pages on the screen while the script is running.
+
+            Will change the database, so please make sure there is a backup before you run it.
+
    (Tip: This script, that opens the web page with the same url when the record is selected, could be a good complement:
    http://www.devon-technologies.com/scripts/userforum/viewtopic.php?f=20&t=10894)
 
 
 There is no user interface (not even command line), so the only way of controlling it is to write code in
 the "if __FILE__ == $0 then" section, or calling if from another script.
+
+Logs are produced to ~/Library/Logs/Ruby/DevonThink_helper
+
+
 
 
 Scripting DevonThink with Ruby
@@ -69,7 +79,7 @@ Tested with Ruby 1.8.7 (the version that comes with Snow Leopard)
 
 Requires these gems:
 
-* 'readability' # See https://github.com/iterationlabs/ruby-readability.
+* 'readability' # (From https://github.com/iterationlabs/ruby-readability.)
 * 'open-uri'
 * 'log4r'
 
