@@ -3,7 +3,6 @@
 #  ItunesFeeder
 #
 #  Created by Tommy Sundström on 12/3-09.
-#  Copyright (c) 2009 Helt Enkelt ab. All rights reserved.
 #
 
 require 'osx/cocoa'

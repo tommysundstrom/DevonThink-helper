@@ -1,5 +1,12 @@
 #!/usr/bin/env ruby
 
+#
+#  tommys_utilities.rb
+#
+#  Created by Tommy Sundström on 4 jan 2011.
+#
+
+
 require 'rubygems'
 require 'osx/cocoa'
 include OSX
@@ -45,6 +52,7 @@ class Devonthink_helper
     # To safely be able to add/remove records, we need real references to the documents
     count = 0
     each_pdf_document(group) do |record|
+      # TODO: Check for "Don't rtf me!"-tag
       pdf_documents << record.get
       @pdf_to_rtf_log.debug "Get: '#{record.name}' (#{record.kind})"
       count += 1
@@ -61,7 +69,7 @@ class Devonthink_helper
       @pdf_to_rtf_log.debug "pdf->rtf: '#{record.name}' (#{record.kind})"
 
       readable_html = readability(record.URL) if record.URL
-      if not readable_html then next end
+      if not readable_html then return :not_redabilityish end
 
       # Temporary files, used as temporary storage (I'm not using tempfile, since I need to the suffix)
       html_path = '/private/tmp/devonthinkhelper_source.html'
@@ -96,7 +104,7 @@ class Devonthink_helper
         target_group = parents.pop
         @devonthink.moveRecord_to_from_(rec, target_group, @db.incomingGroup)
         @created_deleted_log.info "Created: '#{rec.name}' (#{rec.kind}) in '#{target_group.name}'"
-        trash(record, @db.incomingGroup)
+        trash(record, target_group)
         # TODO Check that tags also are preserved
 
         # Replicate to the rest (if any) - and trash originals
@@ -314,6 +322,11 @@ class Devonthink_helper
 
       # Main iterator
       # Will yield items from inbox and other user created groups, but not from Smart Groups, Trash etc.
+      #
+      # Note: These iterators use the ScriptingBridge way of refering to objects, 'Object 1 of...', meaning
+      # that they additions and deletions in the group makes them unreliable. (As you can see in other
+      # parts of the code, I frequently use .get, in order to transform the references into a more robust
+      # form. But even so, this is a major source of confusion and bugs when working with ScriptingBridge.
       def each_normal_group_record(top, safe_references = true, wide_deep = :deep, level=0, limit = :all)
         # wide_deep = :wide is not implemented yet
         # safe_references = false not implemented
@@ -459,11 +472,11 @@ end # class Devonthink_helper
 if __FILE__ == $0 then
   dtdb = Devonthink_helper.new('BokmarktPA04_TEST')
 
-  #group = dtdb.group_from_string(:root)  # :root for root
+  group = dtdb.group_from_string(:root)  # :root for root
   #group = dtdb.group_from_string('/Användbarhetsboken')
   #group = dtdb.group_from_string('/Topics')
   #group = dtdb.group_from_string('/Topics/instruktion')
-  group = dtdb.group_from_string('/Topics/affärsidé')
+  #group = dtdb.group_from_string('/Topics/affärsidé')
 
   #dtdb.each_normal_group_record(group){|record| puts record.name}
   #dtdb.each_normal_group(group){|record| puts record.name}
@@ -471,8 +484,8 @@ if __FILE__ == $0 then
 
   dtdb.transform_pdfs_to_readabilitycleaned_rtf(group)
 
-  #dtdb.unify_URLs(group)
-  #dtdb.uniqify_replicas_of_group(group)
+  dtdb.unify_URLs(group)
+  dtdb.uniqify_replicas_of_group(group)
 
 
 end

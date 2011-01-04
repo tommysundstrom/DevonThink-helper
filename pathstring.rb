@@ -3,7 +3,6 @@
 #  ItunesFeeder
 #
 #  Created by Tommy Sundström on 25/2-09.
-#  Copyright (c) 2009 Helt Enkelt ab. All rights reserved.
 #
 
 require 'pathname'

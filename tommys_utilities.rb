@@ -1,9 +1,7 @@
 #
 #  tommys_utilities.rb
-#  ItunesFeeder
 #
-#  Created by Tommy Sundström on 18/3-09.
-#  Copyright (c) 2009 Helt Enkelt ab. All rights reserved.
+#  Created by Tommy Sundstr√∂m on 18/3-09.
 #
 
 module Tommys_utilities
