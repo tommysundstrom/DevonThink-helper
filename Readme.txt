@@ -24,8 +24,7 @@ For the moment, it can:
 
  * Take PDF files of web-pages, replace them with Readability-versions of the page and transform it to rtf.
    At least on my databases, the Move To/See Also-functionality used to be worthless. After applying Readability to
-   the pages, the results are much better (but strength of the recommendation is still seldom better than the red area).
-   Also, it reduces the size of the database considerably.
+   the pages, the results are much better. Also, it reduces the size of the database considerably.
 
    Cavets:  Will download the page again (so in worst case, if the page has disapered from the web, it will be replaced
             by a 404)

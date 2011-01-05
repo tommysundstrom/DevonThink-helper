@@ -22,13 +22,10 @@ class Devonthink_helper
   def initialize(database)
     begin # logs
       @log = Log.new(__FILE__)  # Logs are kept in ~/Library/Logs/Ruby/DevonThink_helper
-      sleep(1)  # Console has trouble when new logs are created to quickly. TODO Move to 'log' module.
+      # sleep(1)  # Console has trouble when new logs are created to quickly. TODO Move to 'log' module.
       @created_deleted_log = Log.new("Created & deleted items")
-      sleep(1)
       @walker_log = Log.new('Walker') # Follows the walk of the iterators
-      sleep(1)
       @unify_url_log = Log.new('Unify URL')  # TEST
-      sleep(1)
       @pdf_to_rtf_log = Log.new('PDF to RTF')  # TEST
 
     end
@@ -246,13 +243,15 @@ class Devonthink_helper
     master = records.pop
 
     begin # Safety net - will raise an error if the items are not reasonably similar
-      # Needs to be the same: name, URL
+      # Needs to be the same: name, URL, comment
       # Can be different: Kind, Date, Size etc.
       records.each do |r|
         case
           when master.name != r.name,      # Stuff that must be the same.
                master.URL  != r.URL
             raise "To dissimular to safely make into replicas"
+          when master.comment != r.comment
+            raise "Comments differ - will not replicate since I fear to loose unique comments."
         end
       end
     end
