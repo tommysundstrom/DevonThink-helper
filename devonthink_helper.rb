@@ -233,6 +233,7 @@ class Devonthink_helper
             # TODO Exclude records that are in Trash
           else # (Normal case)
             safe_records << r
+            #
         end
       end
     end
