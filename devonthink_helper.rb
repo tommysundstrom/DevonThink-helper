@@ -39,11 +39,16 @@ class Devonthink_helper
   end
 
 
-  # Senare:
-  # Kolla om det finns en rubrik, och sätt annars dit title
-  # Sätt dit skärmdump av webbsidan
-  # Sätt dit rätt ikon
-  # AppleScript för att växla mellan pdf och readabilitiserad version
+
+  # For all documents of kind PDF+Text that has an URL, fetches the document from the web, cleans it with Readability
+  # and puts the result in a RTF (or RTFD) file, in the same locations.
+  #
+  # TODO:
+  # * Attach applescript to each record, to also show the web page when record is selected
+  # * Check if there is a headline, and if not, use the title
+  # * Make a screendump of web page and put in top of document
+  # * Fetch the favicon and use it
+  # * Make applescript to switch back to PDF version
   def transform_pdfs_to_readabilitycleaned_rtf(group)
     pdf_documents = []
 
@@ -114,26 +119,7 @@ class Devonthink_helper
         end
       end
 
-
       # TODO: Ensure that it works for tags also.
-
-=begin
-      begin
-        rec = @devonthink.import_from_name_placeholders_to_type_(rtf_path, nil, record.name, nil, @tillf, nil)
-        rec.URL = record.URL
-        #GÖR OMrec.tags = record.tags.join(',') + ', rtf-ad'
-        rec.date = record.date
-        rec.comment = record.comment
-
-
-        @log.debug "   Have created #{rec.name} (in #{rec.parents.each {|p| p.name}})"
-        @log.info "   Deleting #{item.name} (#{record.class})"
-        @devonthink.deleteRecord_in_(item, nil) # Removes the pdf-file  BUG?  Använd ett get någon smart ställe
-        @log.info "   Done, with tags: #{rec.tags.join(' | ')}"
-      rescue Exception => e
-        @log.warn "Failed with '#{record.name}' (most likely a failed import), due to '#{e}'"
-      end
-=end
     rescue Exception => e
       @log.error "Failed to handle '#{record.name}'. Error: '#{}'"
     end
@@ -144,13 +130,12 @@ class Devonthink_helper
 
   end
 
-# Takes a PDF+Text document and replaces the text with a readability-cleaned version.
+  # Takes a PDF+Text document and replaces the text with a readability-cleaned version.
   # This will (hopefully) result in better recomendation and searches.
   # For practical reason, the PDF is replaced with the current page on the url.
   # TODO: Remove html codes.
   # TODO: Special för mig: ta bort "Texten oven..."-texten.
   # TODO: Figure how to call this when the pdf is first imported.
-  # TODO: Ev. även passa på att få in rätt ikoner, när man ändå bläddrar igenom allt.
   def readability(url)
     begin
       source = open(url).read   # An alternative (to load protected pages) here could be
