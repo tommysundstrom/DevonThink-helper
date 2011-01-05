@@ -224,15 +224,19 @@ class Devonthink_helper
   # Note: What record that is made into master is random
   def make_into_replicas(records)
     begin # Basic safety net, avoiding trouble
+      safe_records = []
       records.each do |r|
         case
           when r.kind ==  'Group',
                r.kind ==  'Smart Group'
-            raise "Error on '#{r.name}' (#{r.kind}) 'make_into_replicas' has not implemented group handling yet"
+            @unify_url_log.warn "Group with URL: '#{r.name}' (#{r.kind}). Not handled, since 'make_into_replicas' does not handle groups."
+            # TODO Exclude records that are in Trash
+          else # (Normal case)
+            safe_records << r
         end
-        # TODO Exclude records that are in Trash
       end
     end
+    records = safe_records
     return false if records.size == 0    # TODO Is this a reasonable result?
 
     # Remove items from records that are already replicas
@@ -245,15 +249,19 @@ class Devonthink_helper
     begin # Safety net - will raise an error if the items are not reasonably similar
       # Needs to be the same: name, URL, comment
       # Can be different: Kind, Date, Size etc.
+      safe_records = []
       records.each do |r|
         case
           when master.name != r.name,      # Stuff that must be the same.
                master.URL  != r.URL
-            raise "To dissimular to safely make into replicas"
+            @unify_url_log.warn "WARNING To dissimular to safely make into replicas"
           when master.comment != r.comment
-            raise "Comments differ - will not replicate since I fear to loose unique comments."
+            @unify_url_log.warn "WARNING Comments differ - will not replicate since I fear to loose unique comments."
+          else # Normal case
+            safe_records << r
         end
       end
+      records = safe_records
     end
 
     # Delete records and replace them with replicas of master
@@ -277,7 +285,12 @@ class Devonthink_helper
   def unify_URLs(group)
     urls = all_URLs_with_several_instances(group)
     urls.each do |key,value|
-      @unify_url_log.debug "Unifying: '#{value.map{|r| r.name}}'"
+      begin # Log
+        @unify_url_log.debug   "Unifying: '#{key}}'"
+        value.each do |r|
+          @unify_url_log.debug "    '#{r.name}' (#{r.kind}) Location: #{r.location}"
+        end
+      end
       make_into_replicas(value)
     end
   end

@@ -54,9 +54,6 @@ class Log #< OSX::NSObject
       unless @@logs.has_key?(@logname)  # If there is alread a log with the name, use it
         setup_log
         setup_default if @logname == :default
-
-        # Log it's own creation
-          ###@@logs[@logname].debug "Log #{@logname} created."
     end
   end
 
