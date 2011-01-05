@@ -95,5 +95,4 @@ I have little time to spend on this, so don't expect frequent updates (or, likel
 
 But feel free to fork it, or do whatever you want with the code here.
 
-
 /Tommy Sundström
