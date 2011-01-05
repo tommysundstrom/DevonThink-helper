@@ -93,7 +93,6 @@ Git access, bugs etc.
 ---------------------
 I have little time to spend on this, so don't expect frequent updates (or, likely, any updates at all).
 
-But feel free to do whatever you want with the code here. Write me at tommy@heltenkelt.se to get access to the
-git repository.
+But feel free to fork it, or do whatever you want with the code here.
 
 /Tommy Sundström
