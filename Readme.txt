@@ -1,6 +1,6 @@
 
 BACKUP YOUR DATABASES BEFORE USING. THIS IS AN EARLY VERSION, AND CAN POTENTIALLY MESS UP YOUR VALUABLE DATA.
-This is an early version, so don't trust it.
+This is early code, so don't trust it.
 
 ====================================================
 DevonThink-helper - using Ruby to control DevonThink
@@ -82,7 +82,11 @@ Requires these gems:
 * 'open-uri'
 * 'log4r'
 
-Please note that 'readability' requires 'nokogiri', which can be tricky to install.
+Please note that 'readability' requires 'nokogiri' (http://nokogiri.org/tutorials/installing_nokogiri.html),
+which is said to be tricky to install. However, I had no trouble installing, using MacPorts and the instructions here:
+http://www.icoretech.org/2010/04/install-nokogiri-and-libxml2-on-snow-leopard/
+(Please note that there are two versions/forks (?) of MacPorts. I used the one called MacPorts, *not* Darwinports.)
+
 
 
 Git access, bugs etc.

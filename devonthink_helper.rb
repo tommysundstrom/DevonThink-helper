@@ -22,11 +22,12 @@ class Devonthink_helper
   def initialize(database)
     begin # logs
       @log = Log.new(__FILE__)  # Logs are kept in ~/Library/Logs/Ruby/DevonThink_helper
-      # sleep(1)  # Console has trouble when new logs are created to quickly. TODO Move to 'log' module.
       @created_deleted_log = Log.new("Created & deleted items")
       @walker_log = Log.new('Walker') # Follows the walk of the iterators
       @unify_url_log = Log.new('Unify URL')  # TEST
       @pdf_to_rtf_log = Log.new('PDF to RTF')  # TEST
+      # Note: Console app sometimes has trouble recognizing logs when created this quickly. If not all shows,
+      # restart Console.
 
     end
     begin # DevonThink items
@@ -220,7 +221,6 @@ class Devonthink_helper
 
 
   # Takes a list of records, and makes them into replicas of each other.
-  # TODO: Remove when there are several identical replicas under the same parent
   # Note: What record that is made into master is random
   def make_into_replicas(records)
     begin # Basic safety net, avoiding trouble
@@ -228,7 +228,7 @@ class Devonthink_helper
         case
           when r.kind ==  'Group',
                r.kind ==  'Smart Group'
-            raise "'make_into_replicas' has not implemented group handling yet"
+            raise "Error on '#{r.name}' (#{r.kind}) 'make_into_replicas' has not implemented group handling yet"
         end
         # TODO Exclude records that are in Trash
       end
@@ -277,6 +277,7 @@ class Devonthink_helper
   def unify_URLs(group)
     urls = all_URLs_with_several_instances(group)
     urls.each do |key,value|
+      @unify_url_log.debug "Unifying: '#{value.map{|r| r.name}}'"
       make_into_replicas(value)
     end
   end
@@ -472,7 +473,7 @@ if __FILE__ == $0 then
   #dtdb.each_normal_group(group){|record| puts record.name}
   #dtdb.all_URLs_with_several_instances(group)
 
-  dtdb.transform_pdfs_to_readabilitycleaned_rtf(group)
+  ###dtdb.transform_pdfs_to_readabilitycleaned_rtf(group)
 
   dtdb.unify_URLs(group)
   dtdb.uniqify_replicas_of_group(group)

@@ -56,7 +56,7 @@ class Log #< OSX::NSObject
         setup_default if @logname == :default
 
         # Log it's own creation
-          @@logs[@logname].debug "Log #{@logname} created."
+          ###@@logs[@logname].debug "Log #{@logname} created."
     end
   end
 
