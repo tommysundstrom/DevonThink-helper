@@ -1,6 +1,7 @@
 
 BACKUP YOUR DATABASES BEFORE USING. THIS IS AN EARLY VERSION, AND CAN POTENTIALLY MESS UP YOUR VALUABLE DATA.
-This is early code, so don't trust it.
+This is early code, so don't trust it. Do the backup in the Finder, not just internally in DevonThink, using
+the Backup & Optimize... command (that will not back up the actual files).
 
 ====================================================
 DevonThink-helper - using Ruby to control DevonThink
