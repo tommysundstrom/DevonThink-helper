@@ -45,7 +45,7 @@ For the moment, it can:
 There is no user interface (not even command line), so the only way of controlling it is to write code in
 the "if __FILE__ == $0 then" section, or calling if from another script.
 
-Logs are produced to ~/Library/Logs/Ruby/DevonThink_helper
+Logs are written to ~/Library/Logs/Ruby/DevonThink_helper
 
 
 
@@ -56,7 +56,8 @@ If you want to use Ruby to script DevonThink, I hope this code will give you som
 
 The biggest hurdle is to figure out the syntax for the commands, since the documentation is weak or nonexistent.
 Also, you can often guess the syntax if you know the corresponding AppleScript command, and I often find myself
-reading the DevonThink AppleScript dictionary in order to figure out how different commands works.
+reading the DevonThink AppleScript dictionary in order to figure out how different commands works and what arguments
+they expect.
 
 The .h file can also be a source of insight. Instructions on how to produce it here:
 http://www.fscript.org/documentation/SystemWideScriptingWithFScript/index.htm
@@ -94,6 +95,6 @@ Git access, bugs etc.
 ---------------------
 I have little time to spend on this, so don't expect frequent updates (or, likely, any updates at all).
 
-But feel free to fork it, or do whatever you want with the code here.
+But please feel free to fork it, or to do whatever you want with the code here.
 
 /Tommy Sundström
