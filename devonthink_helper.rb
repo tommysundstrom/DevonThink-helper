@@ -67,11 +67,11 @@ class Devonthink_helper
     end
   end
 
-  def transform_a_pdf_to_readabilitycleaned_rtf(record)
+  def transform_a_pdf_to_readabilitycleaned_rtf(original_record)
     begin
-      @pdf_to_rtf_log.debug "pdf->rtf: '#{record.name}' (#{record.kind})"
+      @pdf_to_rtf_log.debug "pdf->rtf: '#{original_record.name}' (#{original_record.kind})"
 
-      readable_html = readability(record.URL) if record.URL
+      readable_html = readability(original_record.URL) if original_record.URL
       if not readable_html then return :not_redabilityish end
 
       # Temporary files, used as temporary storage (I'm not using tempfile, since I need to the suffix)
@@ -89,39 +89,40 @@ class Devonthink_helper
       html_to_rtf_file(html_path, rtf_path)  # The resulting file is now in the file at rtf_path
 
       begin
-        rec = @devonthink.import_from_name_placeholders_to_type_(rtf_path, nil, record.name, nil, @db.incomingGroup, nil)
+        replacement_record = @devonthink.import_from_name_placeholders_to_type_(rtf_path, nil, original_record.name, nil, @db.incomingGroup, nil)
       rescue Exception => e
-        @log.warn "Import failed with '#{record.name}', due to '#{e}'"
+        @log.warn "Import failed with '#{original_record.name}', due to '#{e}'"
       end
 
       # Infuse some metainfo from the old record into the new
-      rec.URL = record.URL
-      rec.date = record.date
-      rec.comment = record.comment
+      replacement_record.URL = original_record.URL
+      replacement_record.date = original_record.date
+      replacement_record.comment = original_record.comment
+      replacement_record.unread = original_record.unread
 
       begin # Place the new record at the same locations as the old
-        parents = record.parents
+        parents = original_record.parents
         parents = remove_replicas(parents)
 
         # Move it to the first - and trash the original
         target_group = parents.pop
-        @devonthink.moveRecord_to_from_(rec, target_group, @db.incomingGroup)
-        @created_deleted_log.info "Created: '#{rec.name}' (#{rec.kind}) in '#{target_group.name}'"
-        trash(record, target_group)
+        @devonthink.moveRecord_to_from_(replacement_record, target_group, @db.incomingGroup)
+        @created_deleted_log.info "Created: '#{replacement_record.name}' (#{replacement_record.kind}) in '#{target_group.name}'"
+        trash(original_record, target_group)
         # TODO Check that tags also are preserved
 
         # Replicate to the rest (if any) - and trash originals
         parents.each do |parent|
-          @devonthink.replicateRecord_to_(rec, parent)
-          @created_deleted_log.info "Created: '#{rec.name}' (#{rec.kind}) in '#{parent.name}'"
-          trash(record, parent)
+          @devonthink.replicateRecord_to_(replacement_record, parent)
+          @created_deleted_log.info "Created: '#{replacement_record.name}' (#{replacement_record.kind}) in '#{parent.name}'"
+          trash(original_record, parent)
           # TODO Check that tags also are preserved
         end
       end
 
       # TODO: Ensure that it works for tags also.
     rescue Exception => e
-      @log.error "Failed to handle '#{record.name}'. Error: '#{}'"
+      @log.error "Failed to handle '#{original_record.name}'. Error: '#{}'"
     end
 
 
@@ -241,7 +242,7 @@ class Devonthink_helper
                master.URL  != r.URL
             @unify_url_log.warn "WARNING To dissimular to safely make into replicas"
           when master.comment != r.comment
-            @unify_url_log.warn "WARNING Comments differ - will not replicate since I fear to loose unique comments."
+            @unify_url_log.warn "WARNING Comments differ - '#{r.name}' at '#{r.location}' will not replicated since I fear to loose unique comments."
           else # Normal case
             safe_records << r
         end
