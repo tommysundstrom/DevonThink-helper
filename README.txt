@@ -44,7 +44,6 @@ For the moment, it can:
    the background, when the record is selected.
 
 
-
 There is no user interface (not even command line), so the only way of controlling it is to write code in
 the "if __FILE__ == $0 then" section, or calling if from another script.
 
