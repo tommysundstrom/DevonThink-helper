@@ -303,9 +303,10 @@ class Devonthink_helper
     each_rtf_with_url_document(group) do |r|
       if r.attachedScript == '' then
           r.attachedScript = script_path.to_s
-      elsif overwrite_existing_script or r.attachedScript == script_path then
-        # Don't add a script
-        @log.warn "Tried to attach script '#{script_path}' to '#{r.name}', but it already had one."
+      elsif not overwrite_existing_script or r.attachedScript == script_path then
+        # Don't add a script, but no need to log it.
+      else
+        @log.warn "Tried to attach script '#{script_path}' to '#{r.name}', but it already had this: '#{r.attachedScript}'."
       end
     end
   end
@@ -501,11 +502,11 @@ end # class Devonthink_helper
 if __FILE__ == $0 then
   dtdb = Devonthink_helper.new('BokmarktPA04_TEST')
 
-  #group = dtdb.group_from_string(:root)  # :root for root
+  group = dtdb.group_from_string(:root)  # :root for root
   #group = dtdb.group_from_string('/Användbarhetsboken')
   #group = dtdb.group_from_string('/Topics')
   #group = dtdb.group_from_string('/Topics/instruktion')
-  group = dtdb.group_from_string('/Topics/3D')
+  #group = dtdb.group_from_string('/Topics/3D')
 
   #dtdb.each_normal_group_record(group){|record| puts record.name}
   #dtdb.each_normal_group(group){|record| puts record.name}
@@ -516,7 +517,6 @@ if __FILE__ == $0 then
   dtdb.unify_URLs(group)
   dtdb.uniqify_replicas_of_group(group)
 =end
-
   dtdb.attach_script_to_RTF_records_with_URL(group, 'trigger_open_URL_in_Safari.scpt')
 
 end

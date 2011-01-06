@@ -41,7 +41,7 @@ For the moment, it can:
 
 
  * Attach a script to RTF records that has an URL. The provided script will automatically open the URL in Safari in
-   the background, when the record is selected.
+   the background, when a record is selected.
 
 
 There is no user interface (not even command line), so the only way of controlling it is to write code in
