@@ -28,7 +28,6 @@ class Devonthink_helper
       @pdf_to_rtf_log = Log.new('PDF to RTF')  # TEST
       # Note: Console app sometimes has trouble recognizing logs when created this quickly. If not all shows,
       # restart Console.
-
     end
     begin # DevonThink items
       @devonthink = SBApplication.applicationWithBundleIdentifier_('com.devon-technologies.thinkpro2')
@@ -297,7 +296,18 @@ class Devonthink_helper
     end
   end
 
-
+  # Attaches a script to every RTF document
+  def attach_script_to_RTF_records_with_URL(group, script_filename, overwrite_existing_script = false)
+    script_path = Pathname.new(File.expand_path(File.dirname(__FILE__))) + 'applescripts' + script_filename
+    each_rtf_with_url_document(group) do |r|
+      if r.attachedScript == '' then
+          r.attachedScript = script_path.to_s
+      elsif overwrite_existing_script or r.attachedScript == script_path then
+        # Don't add a script
+        @log.warn "Tried to attach script '#{script_path}' to '#{r.name}', but it already had one."
+      end
+    end
+  end
 
   begin # Help-functions
 
@@ -394,6 +404,34 @@ class Devonthink_helper
             end
         end
       end
+
+      def each_rtf_with_url_document(top, safe_references = true, wide_deep = :deep, level=0, limit = :all)
+        # wide_deep = :wide is not implemented yet
+        # safe_references = false not implemented
+        # limit not implemented
+        level += 1
+        indent = "  "*(level-1)
+
+        case # For case syntax, see http://ilikestuffblog.com/2008/04/15/how-to-write-case-switch-statements-in-ruby/
+          when top.name == "Web Browser.html",    # Web Browser.html is a hack in DevonThink, not a regular file
+               top.kind == "Smart Group",         # Since content in smart groups are also in other places, I avoid them
+               top.uuid == @db.trashGroup.uuid,             # Don't look in the Trash
+               top.uuid == @db.syncGroup.uuid,              # Don't know what this group really does, so I avoid it for the time being
+               top.uuid == @db.tagsGroup.uuid               # TODO: I think this should eventually be included
+            @walker_log.debug indent + "SKIPPED: '#{top.name}'"
+          else
+            top = top.get # I'm using a lot of .get, to avoid mysterious bugs (at the cost of a slower application)
+            if (top.kind == "RTF" or top.kind == "RTFD") and top.URL != '' then
+              @walker_log.debug indent + "'#{top.name}' (#{top.kind})"
+              yield(top)
+            end
+            # TODO Daycare
+            top.children.each do |child|
+              each_rtf_with_url_document(child, safe_references, wide_deep, level){|newtop| yield(newtop)}
+            end
+        end
+      end
+
     end
 
     begin
@@ -462,20 +500,22 @@ end # class Devonthink_helper
 if __FILE__ == $0 then
   dtdb = Devonthink_helper.new('BokmarktPA04_TEST')
 
-  group = dtdb.group_from_string(:root)  # :root for root
+  #group = dtdb.group_from_string(:root)  # :root for root
   #group = dtdb.group_from_string('/Användbarhetsboken')
   #group = dtdb.group_from_string('/Topics')
   #group = dtdb.group_from_string('/Topics/instruktion')
-  #group = dtdb.group_from_string('/Topics/affärsidé')
+  group = dtdb.group_from_string('/Topics/3D')
 
   #dtdb.each_normal_group_record(group){|record| puts record.name}
   #dtdb.each_normal_group(group){|record| puts record.name}
   #dtdb.all_URLs_with_several_instances(group)
 
-  ###dtdb.transform_pdfs_to_readabilitycleaned_rtf(group)
-
+=begin   # Clean up my database
+  dtdb.transform_pdfs_to_readabilitycleaned_rtf(group)
   dtdb.unify_URLs(group)
   dtdb.uniqify_replicas_of_group(group)
+=end
 
+  dtdb.attach_script_to_RTF_records_with_URL(group, 'trigger_open_URL_in_Safari.scpt')
 
 end
