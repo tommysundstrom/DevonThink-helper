@@ -23,6 +23,7 @@ For the moment, it can:
 
             Will change the database, so please make sure there is a backup before you run it.
 
+
  * Take PDF files of web-pages, replace them with Readability-versions of the page and transform it to rtf.
    At least on my databases, the Move To/See Also-functionality used to be worthless. After applying Readability to
    the pages, the results are much better. Also, it reduces the size of the database considerably.
@@ -38,8 +39,10 @@ For the moment, it can:
 
             Will change the database, so please make sure there is a backup before you run it.
 
-   (Tip: This script, that opens the web page with the same url when the record is selected, could be a good complement:
-   http://www.devon-technologies.com/scripts/userforum/viewtopic.php?f=20&t=10894)
+
+ * Attach a script to RTF records that has an URL. The provided script will automatically open the URL in Safari in
+   the background, when the record is selected.
+
 
 
 There is no user interface (not even command line), so the only way of controlling it is to write code in

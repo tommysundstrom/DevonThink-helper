@@ -297,6 +297,7 @@ class Devonthink_helper
   end
 
   # Attaches a script to every RTF document
+  #   (Note: Changes in a script will usually not take effect until DevonThink is restarted)
   def attach_script_to_RTF_records_with_URL(group, script_filename, overwrite_existing_script = false)
     script_path = Pathname.new(File.expand_path(File.dirname(__FILE__))) + 'applescripts' + script_filename
     each_rtf_with_url_document(group) do |r|
