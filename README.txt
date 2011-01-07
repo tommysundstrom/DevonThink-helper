@@ -16,7 +16,7 @@ For the moment, it can:
 
    Cavets:  Will choose what record to replicate randomly.
 
-            I'm not sure that tags are handled correctly (they may be, but I've not tested it enough to be sure.)
+            I'm not sure that tags are handled correctly (they probably are, but I've not tested it enough to be sure.)
 
             If you intentionally have several version of the page saved - maybe to have a historical documentation -
             they will be lost.

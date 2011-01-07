@@ -340,8 +340,7 @@ class Devonthink_helper
           when top.name == "Web Browser.html",    # Web Browser.html is a hack in DevonThink, not a regular file
                top.kind == "Smart Group",         # Since content in smart groups are also in other places, I avoid them
                top.uuid == @db.trashGroup.uuid,             # Don't look in the Trash
-               top.uuid == @db.syncGroup.uuid,              # Don't know what this group really does, so I avoid it for the time being
-               top.uuid == @db.tagsGroup.uuid               # TODO: I think this should eventually be included
+               top.uuid == @db.syncGroup.uuid              # Don't know what this group really does, so I avoid it for the time being
             @walker_log.debug indent + "SKIPPED: '#{top.name}'"
           else
             top = top.get # I'm using a lot of .get, to avoid mysterious bugs (at the cost of a slower application)
@@ -366,7 +365,6 @@ class Devonthink_helper
           when top.kind != "Group",                         # Only interested in groups
                top.uuid == @db.trashGroup.uuid,             # Don't look in the Trash
                top.uuid == @db.syncGroup.uuid,              # Don't know what this group really does, so I avoid it for the time being
-               top.uuid == @db.tagsGroup.uuid,              # TODO: I think this should eventually be included
                top.name == "Web Browser.html"               # Web Browser.html is a hack in DevonThink, not a regular file
             @walker_log.debug indent + "SKIPPED: '#{top.name}'"
           else
@@ -391,8 +389,7 @@ class Devonthink_helper
           when top.name == "Web Browser.html",    # Web Browser.html is a hack in DevonThink, not a regular file
                top.kind == "Smart Group",         # Since content in smart groups are also in other places, I avoid them
                top.uuid == @db.trashGroup.uuid,             # Don't look in the Trash
-               top.uuid == @db.syncGroup.uuid,              # Don't know what this group really does, so I avoid it for the time being
-               top.uuid == @db.tagsGroup.uuid               # TODO: I think this should eventually be included
+               top.uuid == @db.syncGroup.uuid              # Don't know what this group really does, so I avoid it for the time being
             @walker_log.debug indent + "SKIPPED: '#{top.name}'"
           else
             top = top.get # I'm using a lot of .get, to avoid mysterious bugs (at the cost of a slower application)
@@ -418,8 +415,7 @@ class Devonthink_helper
           when top.name == "Web Browser.html",    # Web Browser.html is a hack in DevonThink, not a regular file
                top.kind == "Smart Group",         # Since content in smart groups are also in other places, I avoid them
                top.uuid == @db.trashGroup.uuid,             # Don't look in the Trash
-               top.uuid == @db.syncGroup.uuid,              # Don't know what this group really does, so I avoid it for the time being
-               top.uuid == @db.tagsGroup.uuid               # TODO: I think this should eventually be included
+               top.uuid == @db.syncGroup.uuid              # Don't know what this group really does, so I avoid it for the time being
             @walker_log.debug indent + "SKIPPED: '#{top.name}'"
           else
             top = top.get # I'm using a lot of .get, to avoid mysterious bugs (at the cost of a slower application)
@@ -445,6 +441,8 @@ class Devonthink_helper
           group = @db.root
         elsif group_path == :inbox then
           group = @db.incomingGroup
+        elsif group_path == :tags then
+          group = @db.tagsGroup
         else
           group = @devonthink.getRecordAt_in_(group_path, @db)
         end
@@ -502,7 +500,8 @@ end # class Devonthink_helper
 if __FILE__ == $0 then
   dtdb = Devonthink_helper.new('BokmarktPA04_TEST')
 
-  group = dtdb.group_from_string(:root)  # :root for root
+  #group = dtdb.group_from_string(:root)  # :root for root
+  group = dtdb.group_from_string(:tags)  # :root for root
   #group = dtdb.group_from_string('/Användbarhetsboken')
   #group = dtdb.group_from_string('/Topics')
   #group = dtdb.group_from_string('/Topics/instruktion')
@@ -512,11 +511,11 @@ if __FILE__ == $0 then
   #dtdb.each_normal_group(group){|record| puts record.name}
   #dtdb.all_URLs_with_several_instances(group)
 
-=begin   # Clean up my database
+#=begin   # Clean up my database
   dtdb.transform_pdfs_to_readabilitycleaned_rtf(group)
   dtdb.unify_URLs(group)
   dtdb.uniqify_replicas_of_group(group)
-=end
+#=end
   dtdb.attach_script_to_RTF_records_with_URL(group, 'trigger_open_URL_in_Safari.scpt')
 
 end
